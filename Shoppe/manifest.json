@@ -1,0 +1,31 @@
+{
+  "manifest_version": 3,
+  "name": "Shopee Sentiment Analyzer",
+  "version": "1.0",
+  "description": "Phân tích cảm xúc bình luận Shopee bằng Hybrid Stacking Model",
+  "permissions": [
+    "tabs",
+    "scripting",
+    "sidePanel",
+    "storage"
+  ],
+  "host_permissions": [
+    "http://127.0.0.1:5000/",
+    "*://*.shopee.vn/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "Mở Shopee Sentiment"
+  },
+  "side_panel": {
+    "default_path": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://shopee.vn/*", "*://*.shopee.vn/*"],
+      "js": ["content.js"]
+    }
+  ]
+}

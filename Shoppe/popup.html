@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shopee Sentiment</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap');
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        /* Căn chỉnh body chặt chẽ hơn */
+        body { 
+            width: 100%; height: 100vh; font-family: 'Inter', sans-serif; 
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); 
+            overflow: hidden; display: flex; flex-direction: column;
+            padding: 8px; /* Giảm padding tổng */
+            gap: 8px;    /* Giảm khoảng cách giữa các khối */
+            color: #1e293b;
+        }
+        
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 4px 15px -5px rgba(0, 0, 0, 0.05);
+            border-radius: 12px;
+            padding: 8px 12px; /* Ép mỏng panel */
+        }
+
+        /* --- Header --- */
+        .header { display: flex; justify-content: space-between; align-items: center; }
+        .header-left { display: flex; align-items: center; gap: 10px; }
+        .app-icon {
+            width: 34px; height: 34px; /* Nhỏ hơn */
+            background: linear-gradient(135deg, #6366f1, #a855f7);
+            border-radius: 10px; color: white; display: flex; justify-content: center; align-items: center;
+            font-size: 16px; box-shadow: inset 0 2px 4px rgba(255,255,255,0.3);
+        }
+        .header-titles { display: flex; flex-direction: column; justify-content: center; }
+        .app-title { font-weight: 800; font-size: 14px; line-height: 1.1; }
+        .app-status { font-size: 9px; color: #ef4444; font-weight: 600; }
+
+        .btn-reset {
+            background: #f1f5f9; color: #64748b; border: none; padding: 6px 10px;
+            border-radius: 8px; font-size: 10px; font-weight: bold; cursor: pointer; transition: all 0.2s;
+        }
+        .btn-reset:hover { background: #fef2f2; color: #ef4444; }
+
+        /* --- Toolbar --- */
+        .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+        .page-input-group { display: flex; align-items: center; gap: 6px; }
+        .page-label { font-size: 11px; font-weight: 700; color: #475569; }
+        .page-input-group input {
+            width: 50px; padding: 4px 6px; border-radius: 6px; border: 2px solid #e2e8f0; 
+            font-size: 12px; font-weight: 900; text-align: center; outline: none;
+        }
+        .btn-scan {
+            flex: 1; background: linear-gradient(to right, #ee4d2d, #ff6633);
+            color: white; border: none; border-radius: 8px; padding: 8px; font-size: 11px; font-weight: bold;
+            cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px;
+        }
+
+        /* --- Chart Area (Thu nhỏ) --- */
+        .chart-section { display: flex; align-items: center; justify-content: space-between; padding: 10px; }
+        .chart-left { width: 40%; display: flex; justify-content: center; }
+        .chart-right { width: 60%; display: flex; flex-direction: column; gap: 6px; padding-left: 10px; }
+        
+        .donut-container { 
+            width: 100px; height: 100px; /* Nhỏ gọn lại */
+            border-radius: 50%; background: conic-gradient(#e2e8f0 0% 100%); 
+            position: relative; box-shadow: inset 0 2px 4px rgba(0,0,0,0.06);
+        }
+        .donut-hole { 
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+            width: 64px; height: 64px; background-color: #ffffff; border-radius: 50%; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        .donut-label { font-size: 7px; font-weight: 700; color: #64748b; text-transform: uppercase;}
+        .donut-total { font-size: 18px; font-weight: 900; color: #1e293b; line-height: 1;}
+
+        .stat-row { display: flex; justify-content: space-between; align-items: center; padding: 4px 8px; border-radius: 6px; border: 1px solid; }
+        .stat-pos { background: #f0fdf4; border-color: #dcfce7; }
+        .stat-pos .lbl { color: #15803d; font-size: 10px; font-weight: bold; }
+        .stat-pos .val { color: #16a34a; font-size: 11px; font-weight: 900; }
+        
+        .stat-neu { background: #f8fafc; border-color: #e2e8f0; }
+        .stat-neu .lbl { color: #475569; font-size: 10px; font-weight: bold; }
+        .stat-neu .val { color: #64748b; font-size: 11px; font-weight: 900; }
+        
+        .stat-neg { background: #fef2f2; border-color: #fee2e2; }
+        .stat-neg .lbl { color: #b91c1c; font-size: 10px; font-weight: bold; }
+        .stat-neg .val { color: #dc2626; font-size: 11px; font-weight: 900; }
+
+        .filters-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: 2px; padding-top: 6px; border-top: 1px solid #f1f5f9; }
+        .filter-btn { padding: 4px 6px; border-radius: 4px; border: none; font-size: 9px; cursor: pointer; display: flex; justify-content: space-between; }
+
+        .metrics-panel { display: none; background: #ffffff; padding: 6px; border-radius: 8px; border: 1px dashed #cbd5e1; font-size: 10px; color: #475569; justify-content: space-around; }
+
+        /* --- Comments List Area (Lấy không gian tối đa) --- */
+        .list-section { flex: 1; display: flex; flex-direction: column; overflow: hidden; padding: 0; }
+        .list-header { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(255,255,255,0.7); border-bottom: 1px solid rgba(226, 232, 240, 0.7); }
+        .list-title-wrapper { display: flex; align-items: center; gap: 6px; }
+        .list-indicator { width: 4px; height: 14px; background: #3b82f6; border-radius: 4px; }
+        .list-title { font-size: 11px; font-weight: bold; color: #334155; }
+        
+        .btn-clear-filter { background: #fef2f2; color: #ef4444; border: 1px solid #fee2e2; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: bold; cursor: pointer; display: none; }
+
+        .comments-container { flex: 1; overflow-y: auto; padding: 8px; display: flex; flex-direction: column; gap: 8px; }
+        .comments-container::-webkit-scrollbar { width: 4px; }
+        .comments-container::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+
+        .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: #94a3b8; }
+        .empty-state svg { width: 36px; height: 36px; margin-bottom: 4px; opacity: 0.5; }
+        
+        .cmt-item { background: #f8fafc; padding: 10px; border-radius: 10px; border: 1px solid #f1f5f9; }
+        .cmt-header { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+        .shopee-star { color: #ffce3d; font-size: 9px; letter-spacing: 1px;}
+        .cmt-badge { font-size: 9px; font-weight: bold; padding: 2px 4px; border-radius: 4px; }
+        .cmt-text { font-size: 11px; color: #1e293b; line-height: 1.4; }
+        
+        .bg-green-100 { background-color: #dcfce7; color: #15803d; }
+        .bg-green-50 { background-color: #f0fdf4; color: #16a34a; }
+        .bg-slate-100 { background-color: #f1f5f9; color: #334155; }
+        .bg-blue-100 { background-color: #dbeafe; color: #1d4ed8; }
+        .bg-red-100 { background-color: #fee2e2; color: #b91c1c; }
+        .bg-orange-100 { background-color: #ffedd5; color: #c2410c; }
+        .bg-purple-100 { background-color: #f3e8ff; color: #7e22ce; }
+    </style>
+</head>
+<body>
+    <div class="glass-panel header">
+        <div class="header-left">
+            <div class="app-icon">🧠</div>
+            <div class="header-titles">
+                <h1 class="app-title">Shopee AI</h1>
+                <span class="app-status" id="status-text">Sẵn sàng phân tích</span>
+            </div>
+        </div>
+        <button id="btn-clear" class="btn-reset">Xóa dữ liệu 🗑️</button>
+    </div>
+
+    <div class="glass-panel toolbar">
+        <div class="page-input-group">
+            <span class="page-label">Số trang:</span>
+            <input type="number" id="input-pages" value="3" min="1" max="50">
+        </div>
+        <button id="btn-scan" class="btn-scan">
+            <svg style="width: 14px; height: 14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            Bắt đầu Quét
+        </button>
+    </div>
+
+    <div class="glass-panel chart-section">
+        <div class="chart-left">
+            <div class="donut-container" id="main-donut">
+                <div class="donut-hole">
+                    <span class="donut-label">Tổng bình luận</span>
+                    <span id="total-count" class="donut-total">0</span>
+                </div>
+            </div>
+        </div>
+        <div class="chart-right">
+            <div class="stat-row stat-pos">
+                <span class="lbl">Tích cực</span> <span id="pct-pos" class="val">0%</span>
+            </div>
+            <div class="stat-row stat-neu">
+                <span class="lbl">Trung tính</span> <span id="pct-neu" class="val">0%</span>
+            </div>
+            <div class="stat-row stat-neg">
+                <span class="lbl">Tiêu cực</span> <span id="pct-neg" class="val">0%</span>
+            </div>
+            <div class="filters-grid" id="filter-buttons"></div>
+        </div>
+    </div>
+    
+    <div id="metrics-panel" class="metrics-panel">
+        <div>🕷️ Cào Data: <span id="time-crawl" style="font-weight: 900; color: #0f172a;">0.00s</span></div>
+        <div style="width: 1px; height: 12px; background: #e2e8f0;"></div>
+        <div>🤖 Dự đoán: <span id="time-predict" style="font-weight: 900; color: #0f172a;">0.00s</span></div>
+    </div>
+
+    <div class="glass-panel list-section">
+        <div class="list-header">
+            <div class="list-title-wrapper">
+                <div class="list-indicator"></div>
+                <span class="list-title" id="current-filter-label">Tất cả đánh giá</span>
+            </div>
+            <button id="btn-reset-filter" class="btn-clear-filter">Bỏ lọc ✕</button>
+        </div>
+        
+        <div id="dynamic-comments" class="comments-container">
+            <div class="empty-state">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+                <span style="font-size: 11px; font-weight: 500;">Bấm Quét để lấy bình luận</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="popup.js"></script>
+</body>
+</html>
